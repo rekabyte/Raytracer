@@ -1,28 +1,39 @@
 #include "raytracer.h"
 
+// Inspiration de mon code de ce merveilleux article ( qui a ete d'une grande aide <3 ):
+// https://raytracing.github.io/books/RayTracingInOneWeekend.html
+
 void Raytracer::render(const Scene& scene, Frame* output)
 {
     // Crée le z_buffer.
     double *z_buffer = new double[scene.resolution[0] * scene.resolution[1]];
     for(int i = 0; i < scene.resolution[0] * scene.resolution[1]; i++) {
-        z_buffer[i] = scene.camera.z_far;
+        z_buffer[i] = scene.camera.z_far; //Anciennement DBL_MAX. À remplacer avec la valeur de scene.camera.z_far
     }
 
-    // Calcule les vecteurs de base de la caméra.
+    // @@@@@@ VOTRE CODE ICI
+	// Calculez les paramètres de la caméra pour les rayons.
+
+    //calcul des vecteurs essentiels pour la camera:
+    //tout les vecteurs de direction sont sont normalizees
     double3 cameraPos = scene.camera.position;
     double3 cameraDir = normalize(scene.camera.center - cameraPos);
-    double3 right = normalize(cross(cameraDir, scene.camera.up));
-    double3 up = normalize(cross(right, cameraDir));
-    
-    // Calcule les dimensions de la fenêtre de visualisation.
-    double fov = scene.camera.fovy;
-    double aspect_ratio = scene.camera.aspect;
-    double viewport_height = scene.camera.z_near * tan(deg2rad(fov*0.5))*2;
-    double viewport_width = viewport_height * aspect_ratio;
+    double3 right = normalize(cross(cameraDir, scene.camera.up));   // right = (direction cam . vector up de la cam)
+    double3 up = normalize(cross(right, cameraDir));                // up = (camera right .  camera dir)
+    double jitter_radius = scene.jitter_radius;
 
-    double3 bottomLeftLocal = cameraPos - right * (viewport_width / 2.0) - up * (viewport_height / 2.0) + cameraDir * scene.camera.z_near;
+    //calcul des parametres du viewport:
+    double fovy = scene.camera.fovy;
+    double ratio = scene.camera.aspect;
 
-    double jittering_radius = scene.jitter_radius;
+    //** la hauteur du viewport est calcule selon la formule suivante: h = 2 * znear * tan(fov / 2)
+    double vw_height = 2 * scene.camera.z_near * tan(deg2rad(fovy / 2));
+    double vp_width = vw_height * ratio;
+
+    // vw_bottomLeft = point de depart des rayons
+    //** calculee a partir de la formule: cameraDirection * znear + cameraPosition - cameraRight * (vw half width) - up * (vw half height)
+    double3 vw_bottomLeft = cameraDir * scene.camera.z_near + cameraPos - right * (vp_width / 2.0) - up * (vw_height / 2.0);
+
 
     // Itère sur tous les pixels de l'image.
     for (int y = 0; y < scene.resolution[1]; y++) {
@@ -32,7 +43,6 @@ void Raytracer::render(const Scene& scene, Frame* output)
 
         for(int x = 0; x < scene.resolution[0]; x++) {
 
-            // generate random offset for jittering
             int avg_z_depth = 0;
             double3 avg_ray_color{0,0,0};
             
@@ -44,23 +54,38 @@ void Raytracer::render(const Scene& scene, Frame* output)
                 // Initialize la couleur du rayon
                 double3 ray_color{0,0,0};
 
-                // Mettez en place le rayon primaire en utilisant les paramètres de la caméra.
-                // Lancez le rayon de manière uniformément aléatoire à l'intérieur du pixel dans la zone délimité par jitter_radius. 
-                // Faites la moyenne des différentes couleurs obtenues suite à la récursion.
-                double2 randomOffset = random_in_unit_disk() * jittering_radius;
-                double ray_depth_out = scene.camera.z_far;
-                double deltaX = viewport_width/(double)scene.resolution[0];
-                double deltaY = viewport_height/(double)scene.resolution[1];
+                // @@@@@@ VOTRE CODE ICI
+				// Mettez en place le rayon primaire en utilisant les paramètres de la caméra.
+				// Lancez le rayon de manière uniformément aléatoire à l'intérieur du pixel dans la zone délimité par jitter_radius. 
+				//Faites la moyenne des différentes couleurs obtenues suite à la récursion.
 
-                double3 viewportPixelCoord = bottomLeftLocal + right * (x + randomOffset.x) * deltaX + up * (y + randomOffset.y) * deltaY;
+                //genere vecteur 2d du jitter avec x et y qui sont randomisees pour avoir un bel echantillonage:
+                double2 jitter_offset = random_in_unit_disk() * jitter_radius;
 
+                //calcul de la largeur/hauteur d'un pixel
+                double pixelWidth = vp_width / scene.resolution[0];
+                double pixelHeight = vw_height / scene.resolution[1];
+
+                //coordonnes du pixel = vw_bottomLeft + (cameraRight * x * pixelWidth) + (cameraUp * y * pixelHeight)
+                // pour integrer la randomisation du jitter,
+                // on remplace x et y respectivement par (x + jitter_offset.x) et (y + jitter_offset.y)
+                double3 viewportPixelCoord = vw_bottomLeft 
+                                            + right * (x + jitter_offset.x) * pixelWidth 
+                                            + up * (y + jitter_offset.y) * pixelHeight;
+
+
+                //Parametres des rayons
+                //(origine = cameraPosition ET direction = vecteur qui passe par la pos de la camera et traverse le pixel actuel):
                 ray.origin = cameraPos;
                 ray.direction = normalize(viewportPixelCoord - cameraPos);
 
-                trace(scene, ray, ray_depth, &ray_color, &ray_depth_out);
+                //recursion
+                double z_depth = scene.camera.z_far; //depth max de la scene
+                trace(scene, ray, ray_depth, &ray_color, &z_depth);
 
+                //moyenne des différentes couleurs obtenues suite à la récursion
                 avg_ray_color += ray_color;
-                avg_z_depth += (int)ray_depth_out;
+                avg_z_depth += (int)z_depth;
             }
 
             avg_z_depth = avg_z_depth / scene.samples_per_pixel;
@@ -95,38 +120,42 @@ void Raytracer::trace(const Scene& scene, Ray ray, int ray_depth, double3* out_c
 {
     Intersection hit;
 
+    // Fait appel à l'un des containers spécifiées.
     if(scene.container->intersect(ray,EPSILON,*out_z_depth,&hit)) {       
         Material& material = ResourceManager::Instance()->materials[hit.key_material];
 
-        double3 reflexion_color = {0,0,0};
-        double3 refraction_color = {0,0,0};
+        // @@@@@@ VOTRE CODE ICI
+		// Déterminer la couleur associée à la réflection d'un rayon de manière récursive
+        bool isRayDepth = (ray_depth <= 1) ? true : false;
 
-        if(ray_depth <= 1){
-            Ray reflexion;
-            reflexion.origin = hit.position;
-            reflexion.direction = -normalize(2 * dot(ray.direction, hit.normal) * hit.normal - ray.direction);
-            double reflexionDepth = scene.camera.z_far;
-            trace(scene, reflexion, ray_depth+1, &reflexion_color, &reflexionDepth);
+        double3 reflection_color = {0,0,0};
+        if(isRayDepth) {
+            Ray reflection;
 
-            Ray refraction;
-            refraction.origin = hit.position;
-            double eta = 1.0/material.refractive_index;
-            double cos_theta_i = dot(ray.direction, hit.normal);
+            //calcul des parametres du ray de reflection:
+            //reflection calculee comme suit: reflection = incident - 2 * (normal . incident) * normal
+            //avec incident = ray.direction
+            reflection.origin = hit.position;
+            reflection.direction = normalize(ray.direction - 2 * (dot(hit.normal, ray.direction) * hit.normal));
 
-            double3 perpendicular = eta * (ray.direction - cos_theta_i * hit.normal);
-
-            double parallel_length = -sqrt(1.0 - dot(perpendicular, perpendicular));
-            double3 parallel = parallel_length * hit.normal;
-
-            refraction.direction = normalize(perpendicular + parallel);
-            double refractionDepth = scene.camera.z_far;
-            trace(scene, refraction, ray_depth + 1, &refraction_color, &refractionDepth);
+            //recursion:
+            double reflection_ray_z = scene.camera.z_far;
+            trace(scene, reflection, ray_depth+1, &reflection_color, &reflection_ray_z);
         }
+
+        // @@@@@@ VOTRE CODE ICI
+		// Déterminer la couleur associée à la réfraction d'un rayon de manière récursive.
+		// 
+		// Assumez que l'extérieur/l'air a un indice de réfraction de 1.
+		//
+		// Toutes les géométries sont des surfaces et non pas de volumes.
         
-        *out_color = shade(scene, hit) + reflexion_color * material.k_reflection + refraction_color * material.k_refraction;
+        
+        *out_color = shade(scene, hit) + reflection_color * material.k_reflection;
         *out_z_depth = hit.depth;
     }
 }
+
 // @@@@@@ VOTRE CODE ICI
 // Veuillez remplir les objectifs suivants:
 // 		* Calculer la contribution des lumières dans la scène.
@@ -144,102 +173,144 @@ void Raytracer::trace(const Scene& scene, Ray ray, int ray_depth, double3* out_c
 
 double3 Raytracer::shade(const Scene& scene, Intersection hit)
 {
-    Material& material = ResourceManager::Instance()->materials[hit.key_material]; // Assuming you have access to the material data.
+    Material& material = ResourceManager::Instance()->materials[hit.key_material]; //lorsque vous serez rendu à la partie texture.
 
-    double3 viewDirection = normalize(scene.camera.position - hit.position);
-
+    //toutes les variables pour le calcul de la couleur finale du pixel:
+    double3 lightDir;
+    double3 diffuseComponent = {0.0,0.0,0.0};
+    double3 specularComponent = {0.0,0.0,0.0};
+    double3 lightIntensity = {0.0,0.0,0.0};
     double3 color = material.color_albedo;
 
-     // si une texture est présente, on récupère la couleur aux coordonées UV
-    if (material.texture_albedo.width() > 0 && material.texture_albedo.height() > 0) {
-        // Calculate UV coordinates
-        unsigned int texture_width = material.texture_albedo.width()-1;
-        unsigned int texture_height = material.texture_albedo.height()-1;
-        unsigned int u = (unsigned int)(hit.uv.x * texture_width);
-        unsigned int v = (unsigned int)(hit.uv.y * texture_height);
-        // Sample texture color using UV coordinates
-        unsigned char red, green, blue;
-        material.texture_albedo.get_pixel(u, v, red, green, blue);
+    //y-a-t-il une texture?
+    bool isTextured = (material.texture_albedo.width() > 0 && material.texture_albedo.height() > 0) ? true : false;
 
-        // Convert color components to double values and normalize them
-        color = { (double)red / 255.0, (double)green / 255.0, (double)blue / 255.0 };
+    // si une texture est présente, on récupère la couleur aux coordonées UV
+    if (isTextured) {
+        //calcul des coord UV:
+        int tex_width = material.texture_albedo.width()-1;
+        int tex_height = material.texture_albedo.height()-1;
+        int U = (hit.uv.x * tex_width);
+        int V = (hit.uv.y * tex_height);
+
+        //echantillonnage de la texture:
+        unsigned char R, G, B;
+        material.texture_albedo.get_pixel(U, V, R, G, B);
+
+        //normalisation de couleur, pour passer de [0..255] a [0..1]
+        double3 textureColor = { R / 255.0, G / 255.0, B / 255.0 };
+        color = textureColor;
     }
 
-    double3 lightDirection;
-    double3 lightDiffuse = {0.0,0.0,0.0};
-    double3 lightSpecular = {0.0,0.0,0.0};
-    double3 currentLight = {0.0,0.0,0.0};
-    double3 finalLight = {0.0,0.0,0.0};
-    double3 ambient = {0.0, 0.0, 0.0};
+    //Calculer la contribution des lumières dans la scène.
+    //			- Itérer sur toutes les lumières.
 
+    double3 finalLight = {0.0,0.0,0.0}; // lumiere finale
+    
 
-    for(auto light : scene.lights) {
-        lightDirection = light.position - hit.position;
-        double lightDistance = length(lightDirection);
+    for(SphericalLight light : scene.lights) {
+
+        //Calcule des parametres de la lumiere:
         double radius = light.radius;
-        double lightContribution = 1.0;
-        lightDirection = normalize(lightDirection);
 
-        Ray shadowRay;
-        shadowRay.origin = hit.position;
-        shadowRay.direction = lightDirection;
+        //direction de la lumiere = vecteur qui commencer par la position de l'intersection 
+        // et qui passe par la position de la lumiere
+        lightDir = light.position - hit.position;
+        double light_depth = length(lightDir);
 
-        double out_umbra_depth;
-        Intersection hitUmbra;
+        //on peut normalizer la direction mtn que light_depth a ete calculee
+        lightDir = normalize(lightDir);
 
+        //contribution initiale:
+        double light_contribution = 1.0;
         
 
-// Check if the light source has a radius
-        if(light.radius > 0.0) {
-            // Sample points within the light source's area for soft shadows
-            int numSamples = 5; // Number of samples
-            int hitCount = 0;
+        //*** Calculer si le point est dans l'ombre
+        //shawowRay = commencer a la position du hit et se dirige vers la lumiere
+        Ray shadowRay;
+        shadowRay.origin = hit.position;
+        shadowRay.direction = lightDir;
 
-            for(int i = 0; i < numSamples; i++) {
-                // Generate random offset within a disk
-                double2 randomOffset = random_in_unit_disk() * light.radius;
+        //intersection entre le vecteur de shadow et l'objet stockee:
+        Intersection shadow_hit;
 
-                // Compute sample point within the light source's area
-                double3 samplePoint = light.position + randomOffset.x * normalize(cross(lightDirection, {0, 1, 0})) +
-                                    randomOffset.y * normalize(cross(lightDirection, {1, 0, 0}));
+        //est-ce que la lumiere a un rayon?
+        bool isLightDefined = (light.radius > 0.0) ? true : false;
 
-                // Compute distance from hit point to sample point
-                double samplePointDistance = length(samplePoint - hit.position);
+        //si oui:
+        if(isLightDefined) {
+            //nbre de shadow samples, nbre plus grand => shadows plus realistes mais bcp plus de calculs
+            //todo a changer plus tard
+            int shadow_ray_samples = 5;
+            double hitCount = 0;
 
-                // Check if the shadow ray is occluded by geometry
-                Ray shadowRay;
+            for(int i = 0; i < shadow_ray_samples; i++) {
+                
+                //calcul d'un offset en x,y comme pour le jitter_radius
+                double2 jitter_offset = random_in_unit_disk() * light.radius;
+
+                //generer des points d'echantillonnage à l'interieur de la source lumineuse afin de calculer les soft shadows:
+                // avec: cross(lightDir, {0, 1, 0}) et cross(lightDir, {1, 0, 0})
+                // etant les vecteurs perpendiculaires a l'axe x et y respectivement
+                // ils sont ensuites multipliee par le offset du jitter pour avoir une randomization uniforme
+                double3 sampledPoint = light.position 
+                                    + jitter_offset.x * normalize(cross(lightDir, {0, 1, 0}))
+                                    + jitter_offset.y * normalize(cross(lightDir, {1, 0, 0}));
+
+                //distance entre l'intersection et le point echantillonnee:
+                double samplePointDistance = length(sampledPoint - hit.position);
+
+                //on verifie si l'ombre intersecte avec un objet/geometrie, si oui, on augmente le nombre de hitCount,
+                // qui va servir plus tard pour calculer la penombre
                 shadowRay.origin = hit.position;
-                shadowRay.direction = normalize(samplePoint - hit.position);
-                Intersection hitUmbra;
+                shadowRay.direction = normalize(sampledPoint - hit.position);
+                Intersection shadow_hit;
 
-                if(scene.container->intersect(shadowRay, EPSILON, samplePointDistance, &hitUmbra)) {
+                if(scene.container->intersect(shadowRay, EPSILON, samplePointDistance, &shadow_hit)) {
                     hitCount++;
                 }
             }
 
-            // Calculate soft shadow coefficient based on number of unoccluded samples
-            lightContribution = 1.0 - double(hitCount) / numSamples;
+            //Pour la penombre:
+            //(Au lieu de simplement mettre la contribution à 0, remplacez ce dernier avec le facteur d'occlusion.)
+            //(inclure un facteur d'occlusion en fonction du nombre de rayons qui atteignent la lumière)
+            light_contribution = 1.0 - hitCount / shadow_ray_samples;
         }
+        //si non:
+        // Si le point s'avère être dans l'ombre, le terme d'éclairage devrait être de 0 pour cette source de lumière.
         else{
-            if(scene.container->intersect(shadowRay,EPSILON,lightDistance,&hitUmbra)) lightContribution = 0.0;
+            if(scene.container->intersect(shadowRay,EPSILON,light_depth,&shadow_hit)) light_contribution = 0.0;
         }
 
-        double lambertCoef = std::max(dot(hit.normal, lightDirection),0.0);
+        //On commence a calculer la lumiere finale ici:
+        double3 viewDir = normalize(scene.camera.position - hit.position);
+        double3 halfVec = normalize(viewDir + lightDir);
 
-        double3 halfwayVec = normalize(viewDirection + lightDirection);
-        double specularCoef = pow(std::max(dot(hit.normal, halfwayVec),0.0), material.shininess);
+        //le coeff de Lambert est calcule selon la formule: k_lambert = max(0, N . L)
+        double k_lambert = std::max(0.0, dot(hit.normal, lightDir));
 
-        lightDiffuse = material.k_diffuse * color * lambertCoef;
+        //le coeff de specularite est calcule selon la formule: k_specular = max(0, N . H)^(brillance)
+        //avec H = halfway vector
+        double specularCoef = pow(std::max(0.0, dot(hit.normal, halfVec)), material.shininess);
 
-        lightSpecular = material.k_specular * (material.metallic * color + (1 - material.metallic))* specularCoef;//R
+        //lumiere diffuse = coeff_diffuse * color * coeff_lambert
+        diffuseComponent = material.k_diffuse * color * k_lambert;
 
-        currentLight = (lightDiffuse + lightSpecular)* light.emission/pow(lightDistance,2);
-        finalLight += currentLight * lightContribution;
+        //specularLight = coeff_specular × (materialReflectance × color + (1 − materialReflectance ) ) × coeff_specular
+        specularComponent = material.k_specular * (material.metallic * color + (1 - material.metallic))* specularCoef;
+
+        //lightIntensity = (diffuse + specular) * (emissionCoeff / (lightLength)^2)
+        lightIntensity = (diffuseComponent + specularComponent)* light.emission/pow(light_depth,2);
+
+        //la lumiere finale correspond a l'intesition multiplie par le facteur de contribution
+        finalLight += lightIntensity * light_contribution;
     }
+    
+    //Apres le calcul de toutes les lumieres, on peut calculer la lumiere ambiente avec la formule:
+    // ambientIntensity = ambientLight * materialReflectivity * surfaceColor
+    double3 ambientIntensity = scene.ambient_light * material.k_ambient * color;
 
-    ambient = scene.ambient_light * material.k_ambient * color;
-
-    finalLight += ambient;
+    finalLight += ambientIntensity;
 
     return finalLight;
 }

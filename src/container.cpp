@@ -11,29 +11,29 @@ bool BVH::intersect(Ray ray, double t_min, double t_max, Intersection* hit) {
 	bool hasIntersection = false;
     double closestIntersection = t_max;
 
-    // Pile de nœuds à parcourir
+    //pile de noeud a parcourir
     std::vector<BVHNode*> nodesToVisit;
     nodesToVisit.push_back(root);
 
     while (!nodesToVisit.empty()) {
-        // Prend le dernier nœud de la pile
+        //prend le dernier noeud de la pile
         BVHNode* node = nodesToVisit.back();
         nodesToVisit.pop_back();
 
-        // Vérifie si le rayon intersecte le AABB du nœud
+        //verifie si le rayon intersecte le AABB du noeud
         if (node->aabb.intersect(ray, t_min, t_max)) {
-            // Si le nœud est une feuille, effectue l'intersection avec la géométrie
+            //si le noeud est une feuille, effectue l'intersection avec la geometrie
             if (!node->left && !node->right) {
                 Intersection tempHit;
                 if (objects[node->idx]->intersect(ray, t_min, t_max, &tempHit)) {
                     if (tempHit.depth < closestIntersection) {
                         hasIntersection = true;
                         closestIntersection = tempHit.depth;
-                        *hit = tempHit; // Update hit with the intersection data
+                        *hit = tempHit;
                     }
                 }
             } else {
-                // Si le nœud n'est pas une feuille, ajoute ses enfants à la pile
+                //si le noeud n'est pas une feuille, ajoute ses enfants a la pile
                 if (node->left) {
                     nodesToVisit.push_back(node->left);
                 }
@@ -61,14 +61,14 @@ bool Naive::intersect(Ray ray, double t_min, double t_max, Intersection* hit) {
     for(size_t i = 0; i < objects.size(); i++) {
         Intersection tempHit;
 
-        // First, intersect with the AABB
+        //on intersecte avec l'aabb premierement
         if(aabbs[i].intersect(ray, t_min, t_max)) {
-            // If the ray intersects the AABB, then intersect with the geometry
+            //Si intersecte avec l'AABB, on intersecte avec la geometrie
             if(objects[i]->intersect(ray, t_min, t_max, &tempHit)) {
                 if(tempHit.depth < closestIntersection) {
                     hasIntersection = true;
                     closestIntersection = tempHit.depth;
-                    *hit = tempHit; // Update hit with the intersection data
+                    *hit = tempHit; 
                 }
             }
         }
