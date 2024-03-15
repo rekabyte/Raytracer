@@ -1,0 +1,2 @@
+C:\msys64\ucrt64\bin\ar.exe qc libbitmap_image.a
+C:\msys64\ucrt64\bin\ranlib.exe libbitmap_image.a

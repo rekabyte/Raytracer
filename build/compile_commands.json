@@ -1,0 +1,44 @@
+[
+{
+  "directory": "C:/Users/khalil/Desktop/TP2/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/RAY.dir/includes_CXX.rsp -g -std=c++17 -o CMakeFiles\\RAY.dir\\src\\main.cpp.obj -c C:\\Users\\khalil\\Desktop\\TP2\\src\\main.cpp",
+  "file": "C:/Users/khalil/Desktop/TP2/src/main.cpp",
+  "output": "CMakeFiles/RAY.dir/src/main.cpp.obj"
+},
+{
+  "directory": "C:/Users/khalil/Desktop/TP2/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/RAY.dir/includes_CXX.rsp -g -std=c++17 -o CMakeFiles\\RAY.dir\\src\\object.cpp.obj -c C:\\Users\\khalil\\Desktop\\TP2\\src\\object.cpp",
+  "file": "C:/Users/khalil/Desktop/TP2/src/object.cpp",
+  "output": "CMakeFiles/RAY.dir/src/object.cpp.obj"
+},
+{
+  "directory": "C:/Users/khalil/Desktop/TP2/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/RAY.dir/includes_CXX.rsp -g -std=c++17 -o CMakeFiles\\RAY.dir\\src\\parser.cpp.obj -c C:\\Users\\khalil\\Desktop\\TP2\\src\\parser.cpp",
+  "file": "C:/Users/khalil/Desktop/TP2/src/parser.cpp",
+  "output": "CMakeFiles/RAY.dir/src/parser.cpp.obj"
+},
+{
+  "directory": "C:/Users/khalil/Desktop/TP2/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/RAY.dir/includes_CXX.rsp -g -std=c++17 -o CMakeFiles\\RAY.dir\\src\\raytracer.cpp.obj -c C:\\Users\\khalil\\Desktop\\TP2\\src\\raytracer.cpp",
+  "file": "C:/Users/khalil/Desktop/TP2/src/raytracer.cpp",
+  "output": "CMakeFiles/RAY.dir/src/raytracer.cpp.obj"
+},
+{
+  "directory": "C:/Users/khalil/Desktop/TP2/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/RAY.dir/includes_CXX.rsp -g -std=c++17 -o CMakeFiles\\RAY.dir\\src\\container.cpp.obj -c C:\\Users\\khalil\\Desktop\\TP2\\src\\container.cpp",
+  "file": "C:/Users/khalil/Desktop/TP2/src/container.cpp",
+  "output": "CMakeFiles/RAY.dir/src/container.cpp.obj"
+},
+{
+  "directory": "C:/Users/khalil/Desktop/TP2/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/RAY.dir/includes_CXX.rsp -g -std=c++17 -o CMakeFiles\\RAY.dir\\src\\aabb.cpp.obj -c C:\\Users\\khalil\\Desktop\\TP2\\src\\aabb.cpp",
+  "file": "C:/Users/khalil/Desktop/TP2/src/aabb.cpp",
+  "output": "CMakeFiles/RAY.dir/src/aabb.cpp.obj"
+},
+{
+  "directory": "C:/Users/khalil/Desktop/TP2/build",
+  "command": "C:\\msys64\\ucrt64\\bin\\g++.exe  @CMakeFiles/RAY.dir/includes_CXX.rsp -g -std=c++17 -o CMakeFiles\\RAY.dir\\src\\resource_manager.cpp.obj -c C:\\Users\\khalil\\Desktop\\TP2\\src\\resource_manager.cpp",
+  "file": "C:/Users/khalil/Desktop/TP2/src/resource_manager.cpp",
+  "output": "CMakeFiles/RAY.dir/src/resource_manager.cpp.obj"
+}
+]

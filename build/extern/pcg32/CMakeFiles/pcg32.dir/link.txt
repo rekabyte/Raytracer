@@ -1,0 +1,2 @@
+C:\msys64\ucrt64\bin\ar.exe qc libpcg32.a
+C:\msys64\ucrt64\bin\ranlib.exe libpcg32.a
