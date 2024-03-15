@@ -10,7 +10,7 @@
 					[
 						1
 					],
-					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
+					"jsonFile" : "directory-.-Release-d0094a50bb2071803777.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.24.2"
@@ -31,7 +31,7 @@
 						3,
 						4
 					],
-					"jsonFile" : "directory-extern-Debug-88bde94350c4fc5056f9.json",
+					"jsonFile" : "directory-extern-Release-88bde94350c4fc5056f9.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.24.2"
@@ -42,7 +42,7 @@
 				},
 				{
 					"build" : "extern/bitmap_image",
-					"jsonFile" : "directory-extern.bitmap_image-Debug-0749d11c27b25d769efc.json",
+					"jsonFile" : "directory-extern.bitmap_image-Release-0749d11c27b25d769efc.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.24.2"
@@ -57,7 +57,7 @@
 				},
 				{
 					"build" : "extern/linalg",
-					"jsonFile" : "directory-extern.linalg-Debug-795b9dd5eba1a7a33c11.json",
+					"jsonFile" : "directory-extern.linalg-Release-795b9dd5eba1a7a33c11.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.24.2"
@@ -72,7 +72,7 @@
 				},
 				{
 					"build" : "extern/pcg32",
-					"jsonFile" : "directory-extern.pcg32-Debug-f6c8b3e1c1cb6854d9a9.json",
+					"jsonFile" : "directory-extern.pcg32-Release-f6c8b3e1c1cb6854d9a9.json",
 					"minimumCMakeVersion" : 
 					{
 						"string" : "3.24.2"
@@ -86,7 +86,7 @@
 					]
 				}
 			],
-			"name" : "Debug",
+			"name" : "Release",
 			"projects" : 
 			[
 				{
@@ -114,35 +114,35 @@
 				{
 					"directoryIndex" : 0,
 					"id" : "RAY::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-RAY-Debug-e0510674ac3abf5225f5.json",
+					"jsonFile" : "target-RAY-Release-3f0cfd4c997a8049e911.json",
 					"name" : "RAY",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 2,
 					"id" : "bitmap_image::@13473e476f6cc63e8539",
-					"jsonFile" : "target-bitmap_image-Debug-0a154e8957df6b4e2314.json",
+					"jsonFile" : "target-bitmap_image-Release-0a154e8957df6b4e2314.json",
 					"name" : "bitmap_image",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 3,
 					"id" : "linalg::@54e51150835093e8a5e8",
-					"jsonFile" : "target-linalg-Debug-2a64957ff69930f496c7.json",
+					"jsonFile" : "target-linalg-Release-2a64957ff69930f496c7.json",
 					"name" : "linalg",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 0,
 					"id" : "link_target::@6890427a1f51a3e7e1df",
-					"jsonFile" : "target-link_target-Debug-2c32a91f4802fa5609a3.json",
+					"jsonFile" : "target-link_target-Release-2c32a91f4802fa5609a3.json",
 					"name" : "link_target",
 					"projectIndex" : 0
 				},
 				{
 					"directoryIndex" : 4,
 					"id" : "pcg32::@b1ab0afe506e7a24c231",
-					"jsonFile" : "target-pcg32-Debug-f848578f794aafc65929.json",
+					"jsonFile" : "target-pcg32-Release-f848578f794aafc65929.json",
 					"name" : "pcg32",
 					"projectIndex" : 0
 				}

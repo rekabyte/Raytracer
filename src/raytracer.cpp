@@ -10,9 +10,9 @@ void Raytracer::render(const Scene& scene, Frame* output)
 
     // Calcule les vecteurs de base de la caméra.
     double3 cameraPos = scene.camera.position;
-    double3 lookAt = normalize(scene.camera.center - cameraPos);
-    double3 right = normalize(cross(lookAt, scene.camera.up));
-    double3 up = normalize(cross(right, lookAt));
+    double3 cameraDir = normalize(scene.camera.center - cameraPos);
+    double3 right = normalize(cross(cameraDir, scene.camera.up));
+    double3 up = normalize(cross(right, cameraDir));
     
     // Calcule les dimensions de la fenêtre de visualisation.
     double fov = scene.camera.fovy;
@@ -20,7 +20,7 @@ void Raytracer::render(const Scene& scene, Frame* output)
     double viewport_height = scene.camera.z_near * tan(deg2rad(fov*0.5))*2;
     double viewport_width = viewport_height * aspect_ratio;
 
-    double3 bottomLeftLocal = cameraPos - right * (viewport_width / 2.0) - up * (viewport_height / 2.0) + lookAt * scene.camera.z_near;
+    double3 bottomLeftLocal = cameraPos - right * (viewport_width / 2.0) - up * (viewport_height / 2.0) + cameraDir * scene.camera.z_near;
 
     double jittering_radius = scene.jitter_radius;
 
@@ -192,7 +192,7 @@ double3 Raytracer::shade(const Scene& scene, Intersection hit)
 // Check if the light source has a radius
         if(light.radius > 0.0) {
             // Sample points within the light source's area for soft shadows
-            int numSamples = 1; // Number of samples
+            int numSamples = 5; // Number of samples
             int hitCount = 0;
 
             for(int i = 0; i < numSamples; i++) {

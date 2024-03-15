@@ -44,6 +44,8 @@ bool Sphere::local_intersect(Ray ray,
 							 double t_min, double t_max, 
 							 Intersection *hit) 
 {
+    if(length(ray.origin)<=radius + EPSILON) return false;
+
     auto a = dot(ray.direction, ray.direction);
     auto b = 2.0 * dot(ray.origin, ray.direction);
     auto c = dot(ray.origin, ray.origin) - this->radius * this->radius;
@@ -60,10 +62,33 @@ bool Sphere::local_intersect(Ray ray,
         }
     }
 
+    
+
     hit->depth = root;
     hit->position = ray.origin + root*ray.direction;
     hit->normal = normalize(hit->position);
-    //std::cout << "sphere hit at : (" << hit->position.x << "," << hit->position.y << "," << hit->position.z << ")" << std::endl;
+
+    // Convert the intersection point to spherical coordinates
+    double theta = atan2(hit->position.z, hit->position.x);
+    double phi = acos(hit->position.y / radius);
+
+    // Map theta and phi to u and v (0 <= u, v <= 1)
+    double u = (theta + PI) / (2 * PI);
+    double v = phi / PI;
+
+    // Apply a small offset to u to shift the texture to the left
+    double offset = -0.25; // Adjust this value as needed
+    u = u - offset;
+
+    // Ensure u is still within [0, 1]
+    if (u < 0) u += 1;
+    if (u > 1) u -= 1;
+
+    // Mirror the UV coordinates
+    u = 1.0 - u;
+
+    hit->uv = double2{u, v};
+
     return true;
 }
 
@@ -119,6 +144,18 @@ bool Quad::local_intersect(Ray const ray, double t_min, double t_max, Intersecti
         }
 
         hit->normal = local_normal;
+
+        // Normalize x and y coordinates to [0, 1] for UV mapping
+        double min_x = -half_size;
+        double max_x = half_size;
+        double min_y = -half_size;
+        double max_y = half_size;
+
+        double u = (hit->position.x + half_size) / (half_size * 2);
+        double v = (hit->position.y + half_size) / (half_size * 2);
+
+        // Update hit object with UV coordinates
+        hit->uv = double2{u, 1 - v};
 
         return true;
     }
@@ -205,6 +242,18 @@ bool Cylinder::local_intersect(Ray ray, double t_min, double t_max, Intersection
     hit->position = point;
     hit->normal = normal;
 
+    // Calculer les coordonnées cylindriques
+    double theta = atan2(point.z, point.x);
+    double u = (theta + PI) / (2 * PI);
+    double v = (point.y + half_height) / (2 * half_height);
+
+    u = 0.5 - u;
+    v = 1 - v;
+
+    if (u < 0) u += 1;
+
+    hit->uv = double2{u, v};
+
     return true;
 }
 
@@ -264,35 +313,16 @@ bool Mesh::local_intersect(Ray ray,
 // @@@@@@ VOTRE CODE ICI
 // Occupez-vous de compléter cette fonction afin de trouver l'intersection avec un triangle.
 // S'il y a intersection, remplissez hit avec l'information sur la normale et les coordonnées texture.
-bool Mesh::intersect_triangle(Ray  ray, 
-							  double t_min, double t_max,
-							  Triangle const tri,
-							  Intersection *hit)
+bool Mesh::intersect_triangle(Ray ray, 
+                              double t_min, double t_max,
+                              Triangle const tri,
+                              Intersection *hit)
 {
-	// Extrait chaque position de sommet des données du maillage.
-	double3 const &p0 = positions[tri[0].pi]; // ou Sommet A (Pour faciliter les explications)
-	double3 const &p1 = positions[tri[1].pi]; // ou Sommet B
-	double3 const &p2 = positions[tri[2].pi]; // ou Sommet C
+    double3 const &p0 = positions[tri[0].pi];
+    double3 const &p1 = positions[tri[1].pi];
+    double3 const &p2 = positions[tri[2].pi];
 
-	// Triangle en question. Respectez la convention suivante pour vos variables.
-	//
-	//     A
-	//    / \
-	//   /   \
-	//  B --> C
-	//
-	// Respectez la règle de la main droite pour la normale.
-
-	// @@@@@@ VOTRE CODE ICI
-	// Décidez si le rayon intersecte le triangle (p0,p1,p2).
-	// Si c'est le cas, remplissez la structure hit avec les informations
-	// de l'intersection et renvoyez true.
-	// Pour plus de d'informations sur la géométrie, référez-vous à la classe dans object.hpp.
-	//
-	// NOTE : hit.depth est la profondeur de l'intersection actuellement la plus proche,
-	// donc n'acceptez pas les intersections qui occurent plus loin que cette valeur.
-
-	double3 edge1 = p1 - p0;
+    double3 edge1 = p1 - p0;
     double3 edge2 = p2 - p0;
 
     double3 h = cross(ray.direction, edge2);
@@ -321,11 +351,24 @@ bool Mesh::intersect_triangle(Ray  ray,
         hit->depth = t;
         hit->position = ray.origin + t * ray.direction;
         hit->normal = cross(edge1, edge2); // assuming counter clockwise winding
+
+        // Calculate barycentric coordinates
+        double w0 = 1.0 - u - v;
+        double w1 = u;
+        double w2 = v;
+
+        // Calculate texture coordinates using barycentric interpolation
+        double2 uv0 = tex_coords[tri[0].ti];
+        double2 uv1 = tex_coords[tri[1].ti];
+        double2 uv2 = tex_coords[tri[2].ti];
+        double2 interpolated_uv = w0 * uv0 + w1 * uv1 + w2 * uv2;
+
+        hit->uv = interpolated_uv;
+
         return true;
     }
 
     return false;
-
 }
 
 // @@@@@@ VOTRE CODE ICI
